@@ -9,6 +9,7 @@ The overall goal is to find the input that maximises the unknown function’s ou
 
 In career terms, this project builds practical strengths in sequential decision-making, uncertainty quantification, and experimental design. It sharpens the ability to operate with incomplete knowledge — a vital skill for data scientists, ML engineers, and research professionals who must design, test, and iterate with limited data or budget.
 
+
 Section 2: Inputs and Outputs
 
 Each of the eight black-box functions in the challenge receives a numeric input vector and returns a scalar performance value.
@@ -43,6 +44,7 @@ Example: Input [0.42, 0.78] → Output 0.67.
 
 The model’s goal is to choose the next input intelligently to improve this output, given limited prior observations (often only 10–40 data points to start).
 
+
 Section 3: Challenge Objectives
 
 The objective is to maximise the unknown function using the limited number of evaluations available.
@@ -56,6 +58,7 @@ Sequential feedback: Each new input must be chosen based on results so far.
 Unknown function structure: The mapping from inputs to outputs is nonlinear, possibly multimodal, and noisy.
 
 This setup tests the ability to balance exploration (searching new areas to learn about the function) and exploitation (refining around known high-performing regions). The challenge lies in achieving the global maximum efficiently while managing uncertainty and cost.
+
 
 Section 4: Technical Approach
 
@@ -93,3 +96,44 @@ Exploration vs exploitation balance:
 
 Current strategy still includes limited exploration in uncertain regions but increasingly trusts the model’s predictions as more data accumulates.
 The switch from broad exploration to local refinement is planned dynamically based on Expected Improvement convergence.
+
+
+Section 5: Workflow Overview
+
+The BBO capstone project follows a structured optimisation loop designed to efficiently explore and exploit unknown functions under a strict query budget:
+
+Data Preparation – Load and normalise initial input-output pairs from .npy files.
+
+Model Fitting – Train a surrogate model (Gaussian Process or Neural Network) to approximate the black-box function.
+
+Acquisition Step – Use an acquisition function (Expected Improvement, Probability of Improvement, or Upper Confidence Bound) to suggest the next query point.
+
+Evaluation and Logging – Query the true function, update results, and retrain the surrogate model.
+
+Visualisation and Analysis – Track convergence, feature importance, and model uncertainty to guide the next round.
+
+
+Section 6: Surrogate Modelling Approaches
+
+The repository implements multiple surrogate modelling strategies to represent the unknown functions:
+
+Gaussian Process (GP):
+Uses the Matern kernel for smooth, non-linear surface modelling with uncertainty quantification. Ideal for low-data regimes (under 40 samples).
+
+Neural Network Surrogate:
+Implemented in PyTorch, the NN model learns complex, high-dimensional patterns. Gradient-based sensitivity analysis helps identify influential features and guide the next query direction.
+
+
+Section 7: Hyperparameter Tuning
+
+The following parameters significantly affect model performance and convergence:
+
+Category--Example Parameter--Description--Type
+
+GP Kernel--length_scale, nu, noise_level--Controls smoothness and noise tolerance--Continuous
+
+Acquisition--xi (EI/PI)--Adjusts exploration–exploitation balance--Continuous
+
+Neural Net--hidden_layers, neurons, learning_rate, batch_size--Defines network capacity and training dynamics--Discrete/Continuous
+
+Hyperparameters are tuned empirically through short validation runs or via Bayesian optimisation when computationally feasible.
