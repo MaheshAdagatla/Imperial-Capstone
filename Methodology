@@ -38,6 +38,6 @@ For Neural Networks, hyperparameters such as the number of hidden layers, neuron
 The exploration parameter xi in the acquisition function is tuned dynamically across iterations. It begins with a large value to promote exploration and gradually decreases as convergence is approached.
 The optimisation process can stop when the Expected Improvement values plateau or when additional evaluations no longer lead to significant improvement, typically defined as less than a 1% gain.
 
-8. Feature Sensitivity and Dimensionality Handling
+7. Feature Sensitivity and Dimensionality Handling
 
 Feature importance is assessed differently for each model type. In the Gaussian Process, the inverse of the learned length scale serves as an indicator of how sensitive the output is to changes in a particular input dimension. In the Neural Network, gradients of the output with respect to each input are used to identify the most influential features. By focusing on features with high sensitivity and deprioritising less important ones, the model becomes more efficient and converges faster with limited data. This helps allocate the small number of available queries to regions of the input space that are most likely to yield improvement.
