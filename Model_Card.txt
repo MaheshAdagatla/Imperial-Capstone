@@ -1,0 +1,130 @@
+Model Card: Hybrid Two-Stage Surrogate-Based Black-Box Optimisation
+1. Overview
+
+Model name: Hybrid GP–NN Two-Stage BBO Optimiser
+Type: Sequential surrogate-based black-box optimisation approach
+Version: v0.06 (10-round iterative refinement)
+
+This approach combines a Gaussian Process (GP) surrogate and a Neural Network (NN) surrogate in a two-stage candidate selection pipeline. The GP provides uncertainty-aware screening of candidates, while the NN refines selections based on learned nonlinear structure. The strategy was iteratively refined over ten optimisation rounds under strict query budgets.
+
+2. Intended Use
+
+Suitable for:
+
+Black-box optimisation with very limited evaluation budgets
+
+Continuous bounded search spaces
+
+Problems where function evaluations are expensive or slow
+
+Educational and research settings exploring exploration–exploitation trade-offs
+
+Not suitable for:
+
+Discrete or categorical optimisation problems
+
+Large-scale datasets where full supervised learning is feasible
+
+Highly non-stationary or discontinuous objective functions
+
+Scenarios requiring guaranteed global optimality
+
+3. Approach Details and Evolution Across Rounds
+
+Across ten rounds, the optimisation strategy evolved deliberately:
+
+Early rounds (exploration-focused):
+
+Broad uniform sampling over [0,1] for each of d dimensions
+
+GP surrogate with Matérn kernel to capture smoothness assumptions
+
+Uncertainty-aware acquisition (UCB-style) to explore under-sampled regions
+
+Middle rounds (balanced):
+
+Introduction of a Neural Network surrogate to capture nonlinear trends
+
+Two-stage selection: GP shortlist → NN re-ranking
+
+Increased reliance on surrogate agreement rather than pure uncertainty
+
+Later rounds (controlled exploitation):
+
+Shift toward exploitation as budgets decreased
+
+Dimension importance estimation from GP lengthscales and NN sensitivities
+
+Weighted candidate sampling that narrows weak dimensions while preserving full input format
+
+Localised sampling around current best points, while retaining some diversity
+
+Throughout, the code and strategy were refined weekly based on observed behaviour rather than fixed upfront design.
+
+4. Performance
+
+Evaluation context:
+
+Eight independent black-box functions
+
+Strictly limited number of queries per function
+
+No access to ground-truth optima
+
+Metrics used:
+
+Best observed function value per round
+
+Improvement over initial baseline values
+
+Stability of surrogate predictions during exploitation
+
+Qualitative convergence behaviour rather than regret bounds
+
+Summary:
+
+Consistent improvement across most functions over rounds
+
+Clear diminishing returns after ~60–70% of the budget, motivating exploitation
+
+In some cases, exploitation predictions were slightly below the current best, reflecting uncertainty and surrogate bias rather than failure
+
+5. Assumptions and Limitations
+
+Key assumptions:
+
+Objective functions are reasonably smooth and continuous
+
+Local optima provide useful information for global optimisation
+
+Surrogate uncertainty is informative despite very small datasets
+
+Limitations:
+
+High sensitivity to early samples due to low data regime
+
+Potential sampling bias toward regions favoured by surrogate assumptions
+
+No formal guarantees of convergence or optimality
+
+Performance depends strongly on correct scaling and normalisation
+
+Failure modes include premature convergence, overconfidence in surrogate predictions, and missed optima in poorly explored regions.
+
+6. Ethical and Transparency Considerations
+
+Transparency was prioritised by documenting:
+
+Query decisions
+
+Model assumptions
+
+Hyperparameter choices
+
+Weekly strategy changes
+
+This supports reproducibility and enables other researchers to follow, critique, or adapt the approach. While the task is synthetic, the discipline of transparent optimisation design mirrors real-world ML settings where opaque decision-making can lead to unreliable or biased outcomes.
+
+7. Reflections on Clarity and Usefulness
+
+This model card captures how decisions were actually made, rather than presenting a polished “final model.” The structure is sufficient because it aligns strategy, assumptions, and outcomes clearly. Adding more technical detail (e.g. full kernel equations or NN architectures) would not materially improve understanding without more data. The emphasis on reasoning, evolution, and constraints better reflects how optimisation works in practice under uncertainty.
