@@ -12,6 +12,8 @@ In career terms, this project builds practical strengths in sequential decision-
 
 Section 2: Inputs and Outputs
 
+Refer the datasheet card at /Datasheet.txt
+
 Each of the eight black-box functions in the challenge receives a numeric input vector and returns a scalar performance value.
 
 Inputs (queries):
@@ -114,6 +116,8 @@ Visualisation and Analysis – Track convergence, feature importance, and model 
 
 
 Section 6: Surrogate Modelling Approaches
+
+Refer the model card at /Model_Card.txt
 
 The repository implements multiple surrogate modelling strategies to represent the unknown functions:
 
