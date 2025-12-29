@@ -18,7 +18,7 @@ Neural networks are used as an alternative surrogate when the function’s dimen
 
 4. Acquisition Function Selection
 
-Expected Improvement (EI) is used as the acquisition function because it naturally balances exploration and exploitation. It quantifies the expected gain in function value relative to the current best observation, while also accounting for uncertainty in the model’s predictions. In early iterations, a higher exploration parameter (xi between 0.01 and 0.05) encourages sampling in diverse regions to avoid missing global optima. As the optimisation progresses, xi is reduced to around 0.001 to focus more on refining the best region found so far. Alternative acquisition strategies such as Probability of Improvement (PI) and Upper Confidence Bound (UCB) were considered, but EI was preferred because PI tends to overexploit early, and UCB can overexplore under limited data conditions.
+Expected Improvement (EI) is used as the acquisition function because it naturally balances exploration and exploitation. Alternative acquisition strategies such as Probability of Improvement (PI) and Upper Confidence Bound (UCB) were considered, but EI was preferred because PI tends to overexploit early, and UCB can overexplore under limited data conditions. It quantifies the expected gain in function value relative to the current best observation, while also accounting for uncertainty in the model’s predictions. In early iterations, a higher exploration parameter (xi between 0.01 and 0.05) encourages sampling in diverse regions to avoid missing global optima. As the optimisation progresses, xi is reduced to around 0.001 to focus more on refining the best region found so far. 
 
 5. Sequential Optimisation Workflow
 
