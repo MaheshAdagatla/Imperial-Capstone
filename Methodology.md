@@ -1,43 +1,92 @@
 Methodology.md
 1. Purpose of This Document
 
-This document explains the reasoning and decision-making behind the methods used in the Black-Box Optimisation (BBO) Capstone Project. It complements the README.md by describing why particular modelling choices, acquisition functions, and workflows were adopted. The aim is to ensure that peers, facilitators, and future collaborators can trace the logic behind each design decision and evaluate the project’s reproducibility.
+This document records the methodological reasoning behind the Black-Box Optimisation (BBO) Capstone Project and how that reasoning evolved over successive rounds. Rather than describing a single fixed algorithm, it documents an adaptive optimisation strategy that changed as more evidence was gathered and the remaining query budget decreased. The aim is to allow another researcher to understand not only what was done, but why the approach changed over time and how those changes were justified.
 
 2. Problem Understanding
 
-The challenge is to optimise unknown, expensive-to-evaluate functions with a strict query limit. Each function can only be probed a limited number of times, and the goal is to find the maximum using as few evaluations as possible. Because the underlying structure of the function is unknown and potentially noisy, the project focuses on sequential, data-efficient learning. Every evaluation must yield high information gain, the model must provide accurate uncertainty estimates, and the optimisation loop must adapt dynamically as new data arrive.
+The task is to optimise unknown, expensive-to-evaluate functions under a strict query budget. Each function can only be queried a limited number of times, and no assumptions are made about smoothness, modality, or noise beyond what can be inferred from observations. Because early decisions strongly shape later outcomes, the optimisation strategy must balance information gathering with performance improvement and adapt as uncertainty reduces.
 
-3. Modelling Rationale
-Gaussian Process (GP) Surrogate
+3. Initial Strategy (Early Rounds: Broad Exploration)
+Modelling Choice
 
-Gaussian Processes are the main surrogate model because they provide both predictive means and uncertainty estimates, allowing the optimisation algorithm to balance exploration and exploitation. The Matern kernel is used since it can represent a wide range of smooth and non-smooth surfaces, making it robust for unknown functions. Hyperparameters such as the length scale, kernel variance, and noise level are re-optimised after each iteration. The length-scale bounds are particularly useful for detecting irrelevant input dimensions through automatic relevance determination. GPs are most suitable for low-dimensional tasks with fewer than about 40 observations, where computational cost is manageable.
+In the early rounds, Gaussian Processes (GPs) were selected as the primary surrogate model due to their strong performance in low-data settings and their ability to quantify predictive uncertainty. A Matérn kernel was used to remain flexible to both smooth and moderately rough response surfaces.
 
-Neural Network Surrogate
+At this stage, the goal was coverage rather than precision. The GP was treated primarily as a tool for understanding the global structure of the function rather than for precise optimisation.
 
-Neural networks are used as an alternative surrogate when the function’s dimensionality increases or when the GP shows signs of underfitting. The network is implemented in PyTorch with two to three hidden layers and between 32 and 128 neurons. Activation functions such as ReLU or Tanh are chosen based on convergence behaviour. The main reason for including a neural network is its flexibility in modelling highly non-stationary or irregular response surfaces. Gradient-based sensitivity analysis is used to identify influential features, which can guide future sampling decisions.
+Acquisition Behaviour
 
-4. Acquisition Function Selection
+Early acquisition emphasised exploration. Uncertainty-aware acquisition functions were prioritised so that regions with high predictive variance would be sampled, even if their predicted mean was modest. This reduced the risk of prematurely committing to a suboptimal region and helped identify whether the function exhibited strong boundary effects, symmetry, or flat regions.
 
-Expected Improvement (EI) is used as the acquisition function because it naturally balances exploration and exploitation. Alternative acquisition strategies such as Probability of Improvement (PI) and Upper Confidence Bound (UCB) were considered, but EI was preferred because PI tends to overexploit early, and UCB can overexplore under limited data conditions. It quantifies the expected gain in function value relative to the current best observation, while also accounting for uncertainty in the model’s predictions. In early iterations, a higher exploration parameter (xi between 0.01 and 0.05) encourages sampling in diverse regions to avoid missing global optima. As the optimisation progresses, xi is reduced to around 0.001 to focus more on refining the best region found so far. 
+4. Intermediate Strategy (Mid Rounds: Structured Exploration)
+Motivation for Change
 
-5. Sequential Optimisation Workflow
+By the mid rounds, repeated evaluations began to reveal consistent patterns:
 
-Each iteration of the optimisation process follows a structured loop.
-First, the initial data are prepared by loading the existing input-output pairs and applying normalisation to ensure numerical stability.
-Next, the surrogate model (either Gaussian Process or Neural Network) is trained to approximate the current belief about the function.
-After fitting, the acquisition function is evaluated over candidate input points to identify the next query that offers the best trade-off between potential improvement and uncertainty.
-This selected point is then evaluated on the true black-box function, and the resulting output value is added to the dataset.
-The model is retrained with this new data, updating its parameters and posterior beliefs.
-Throughout this process, the model’s convergence is monitored through visual plots and numerical summaries to check whether Expected Improvement values are stabilising.
-Feature sensitivity and uncertainty estimates are also reviewed after each iteration to decide whether exploration or exploitation should be prioritised in the next step.
+Certain regions were repeatedly high-performing.
 
-6. Hyperparameter Optimisation Justification
+Some input dimensions appeared weakly influential.
 
-For Gaussian Processes, kernel hyperparameters are re-estimated via maximum marginal likelihood at every iteration. This dynamic adjustment helps the model remain flexible as more data become available. Length scales also reveal which features have the greatest influence, allowing irrelevant dimensions to be implicitly down-weighted.
-For Neural Networks, hyperparameters such as the number of hidden layers, neurons, learning rate, and batch size are selected empirically through short trial runs. The goal is to find the smallest network that maintains stability and accuracy without overfitting.
-The exploration parameter xi in the acquisition function is tuned dynamically across iterations. It begins with a large value to promote exploration and gradually decreases as convergence is approached.
-The optimisation process can stop when the Expected Improvement values plateau or when additional evaluations no longer lead to significant improvement, typically defined as less than a 1% gain.
+Purely global exploration produced diminishing returns.
 
-7. Feature Sensitivity and Dimensionality Handling
+These observations motivated a shift toward structured exploration.
 
-Feature importance is assessed differently for each model type. In the Gaussian Process, the inverse of the learned length scale serves as an indicator of how sensitive the output is to changes in a particular input dimension. In the Neural Network, gradients of the output with respect to each input are used to identify the most influential features. By focusing on features with high sensitivity and deprioritising less important ones, the model becomes more efficient and converges faster with limited data. This helps allocate the small number of available queries to regions of the input space that are most likely to yield improvement.
+Dual-Surrogate Introduction
+
+A neural network (NN) surrogate was introduced alongside the GP. The GP retained responsibility for uncertainty estimation and global guidance, while the NN provided a more flexible approximation of complex or non-stationary behaviour. At this stage, the NN was not trusted for global search, but it proved useful for comparing candidates already deemed promising.
+
+Feature Sensitivity Analysis
+
+Feature importance estimates were extracted from both models:
+
+GP length scales were interpreted as relevance indicators.
+
+NN input gradients were used to assess local sensitivity.
+
+Rather than removing dimensions, less influential features were implicitly down-weighted during candidate generation. This preserved the full input structure while improving sampling efficiency.
+
+5. Transition Strategy (Later Rounds: Exploration → Exploitation)
+Budget Awareness
+
+As approximately 60–70% of the query budget was consumed, the optimisation objective shifted. The emphasis moved from learning the global structure of the function to refining the best regions already identified. At this point, continued broad exploration was unlikely to outperform focused refinement.
+
+Two-Stage Candidate Selection
+
+A two-stage selection process was adopted:
+
+A large candidate set was evaluated using the GP with a reduced exploration weight.
+
+A smaller shortlist was re-ranked using the NN’s predicted mean.
+
+This approach retained uncertainty awareness while increasingly favouring high-mean regions.
+
+6. Current Strategy (Final Rounds: Controlled Exploitation)
+Localised Candidate Sampling
+
+In the final rounds, candidate generation was restricted to a local neighbourhood around the current best-known solution. The sampling radius was progressively reduced to control exploitation and avoid overly greedy steps. Feature importance continued to shape how tightly each dimension was sampled.
+
+Acquisition Tuning
+
+The GP acquisition function was made deliberately more exploitative by lowering the uncertainty coefficient. This reflects increased confidence in the surrogate models and the high cost of exploratory queries late in the budget.
+
+Role of the Neural Network
+
+The NN now plays a decisive role in fine-grained selection. Rather than guiding exploration, it acts as a local ranking mechanism within a carefully chosen region. This mirrors practical optimisation settings where coarse global models hand off to local refiners near convergence.
+
+7. Hyperparameter Adaptation Across Rounds
+
+Hyperparameters were adjusted dynamically rather than fixed:
+
+Candidate pool sizes decreased over time.
+
+Exploration weights were reduced steadily.
+
+Local sampling radii were introduced and tightened.
+
+NN batch sizes were reduced to emphasise sharper local decisions.
+
+These changes were guided by observed convergence behaviour rather than predefined schedules.
+
+8. Reflections and Limitations
+
+This evolving methodology assumes that local smoothness exists near good solutions and that feature relevance inferred from limited data is meaningful. While the adaptive strategy reduces wasted queries, it may still miss isolated global optima or underperform on highly deceptive landscapes. These risks were mitigated through controlled, rather than greedy, exploitation in the final rounds.
