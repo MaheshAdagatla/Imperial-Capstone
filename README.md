@@ -1,28 +1,28 @@
 # Imperial-Capstone
-Repository for the capstone project
-
+Repository for the Black-Box Optimisation Capstone Project
 Section 1: Project Overview
 
-The Black-Box Optimisation (BBO) Capstone Project explores how to efficiently optimise unknown, complex functions when direct analytical forms are unavailable. Each function behaves like a “black box” — you can query it at specific input values and receive a response, but you don’t know the underlying relationship. This mirrors many real-world machine learning and industrial problems, such as hyperparameter tuning, materials discovery, drug design, or process optimisation, where evaluating the objective is expensive and limited.
+The Black-Box Optimisation (BBO) Capstone Project investigates how to efficiently optimise unknown, complex functions when no analytical form or gradients are available. Each objective behaves like a black box: it can be queried at chosen input values and returns a scalar response, but the underlying relationship is hidden.
 
-The overall goal is to find the input that maximises the unknown function’s output while keeping the number of queries (evaluations) as low as possible. Because every function call is costly, the project focuses on learning efficiently from limited data — making intelligent decisions about where to sample next.
+This setting mirrors real-world problems such as hyperparameter tuning, materials discovery, drug design, and industrial process optimisation, where evaluations are expensive and strictly limited. The core challenge is to identify high-performing inputs while making as few function calls as possible.
 
-In career terms, this project builds practical strengths in sequential decision-making, uncertainty quantification, and experimental design. It sharpens the ability to operate with incomplete knowledge — a vital skill for data scientists, ML engineers, and research professionals who must design, test, and iterate with limited data or budget.
+The project emphasises sequential, data-efficient decision-making under uncertainty. Rather than fixing a single algorithm upfront, the optimisation strategy was iteratively refined across multiple rounds in response to observed behaviour. This reflects realistic ML and research workflows, where strategies adapt as evidence accumulates.
 
+From a professional perspective, the project builds practical capability in uncertainty-aware modelling, experimental design, and iterative reasoning — key skills for data scientists, ML engineers, and researchers working under tight data or budget constraints.
 
 Section 2: Inputs and Outputs
 
-Refer the datasheet card at /Datasheet.txt
+(Refer to /Datasheet.txt for full data documentation.)
 
-Each of the eight black-box functions in the challenge receives a numeric input vector and returns a scalar performance value.
+Each of the eight black-box functions accepts a numeric input vector and returns a single scalar output.
 
 Inputs (queries):
 
-Structured as continuous feature vectors [x1, x2 ... xn]
+Continuous feature vectors: [x1,x2,…,xn]
 
-Each function has a different dimensionality (d ranges from 2 to 8).
+Dimensionality varies by function (d ranges from 2 to 8)
 
-Example:
+Examples:
 
 Function 1 input: [0.42, 0.78]
 
@@ -32,112 +32,148 @@ Constraints:
 
 Inputs must start with 0
 
-Inputs must have a maximum 6 decimals
+Inputs must have a maximum of 6 decimal places
 
-Queries are sequential — one function call per iteration.
+Queries are strictly sequential (one evaluation per iteration)
 
 Outputs (responses):
 
-Each query returns a single real-valued score representing the function’s performance at that input.
+A single real-valued score per query
 
-All tasks are maximisation problems — higher values indicate better performance.
+All tasks are maximisation problems (higher is better)
 
-Example: Input [0.42, 0.78] → Output 0.67.
-
-The model’s goal is to choose the next input intelligently to improve this output, given limited prior observations (often only 10–40 data points to start).
-
+The optimiser’s role is to select the next input intelligently, given very limited prior observations (often fewer than 40 points).
 
 Section 3: Challenge Objectives
 
-The objective is to maximise the unknown function using the limited number of evaluations available.
+The objective is to maximise each unknown function under a strict evaluation budget.
 
-Key constraints include:
+Key constraints:
 
-Limited query budget: Only 13 total evaluations per function (including the initial data).
+Limited query budget: 13 total evaluations per function (including initial data)
 
-Sequential feedback: Each new input must be chosen based on results so far.
+Sequential feedback: Each query must depend on all previous results
 
-Unknown function structure: The mapping from inputs to outputs is nonlinear, possibly multimodal, and noisy.
+Unknown structure: Functions may be nonlinear, multimodal, and noisy
 
-This setup tests the ability to balance exploration (searching new areas to learn about the function) and exploitation (refining around known high-performing regions). The challenge lies in achieving the global maximum efficiently while managing uncertainty and cost.
+This setup explicitly tests the ability to balance exploration (learning about unobserved regions) and exploitation (refining known high-performing regions). Success depends on extracting maximal information from each evaluation rather than brute-force search.
 
+Section 4: Technical Approach and Its Evolution
 
-Section 4: Technical Approach
+Rather than using a fixed optimisation strategy, the approach evolved across rounds as more information became available.
 
-During the first three query submissions, the approach has evolved from exploration-driven to model-guided optimisation:
+Early rounds (exploration-first):
 
-Modelling technique:
+Broad sampling across the full input domain
 
-A Gaussian Process (GP) surrogate model with a Matern kernel models the unknown function.
+Gaussian Process (GP) surrogate with a Matérn kernel
 
-The GP provides both mean predictions and uncertainty estimates, enabling informed decisions about where to query next.
+Acquisition behaviour prioritised uncertainty reduction to avoid premature commitment
 
-Acquisition strategy:
+Middle rounds (balanced refinement):
 
-The Expected Improvement (EI) function guides the search.
+Introduction of a Neural Network (NN) surrogate to capture nonlinear patterns
 
-Early iterations emphasised exploration (higher exploration parameter values, e.g., 0.01–0.05) to discover promising regions.
+Two-stage candidate selection: GP-based screening followed by NN re-ranking
 
-Later iterations will shift toward exploitation (smaller exploration parameter values, eg. 0.001 or using Probability of Improvement) to fine-tune around the best region.
+Decisions increasingly guided by agreement between surrogates rather than uncertainty alone
 
-Hyperparameter handling:
+Later rounds (controlled exploitation):
 
-GP hyperparameters (length-scales, variance, noise) are re-optimised after each iteration.
+Sampling progressively localised around the best-performing regions
 
-High length-scale bounds help detect and down-weight irrelevant dimensions.
+Dimension importance estimated via GP length-scales and NN sensitivities
 
-Feature sensitivity:
+Weaker dimensions narrowed more aggressively while preserving full input structure
 
-Sensitivity analysis assesses feature influence; features with minimal impact may be deprioritised to improve efficiency.
+Small, deliberate exploration retained to avoid overconfidence
 
-Alternative considerations:
-
-Explored SVM classification and feature relevance analysis to identify high vs low performance regions, but these serve mainly as diagnostic aids rather than replacements for the GP.
-
-Exploration vs exploitation balance:
-
-Current strategy still includes limited exploration in uncertain regions but increasingly trusts the model’s predictions as more data accumulates.
-The switch from broad exploration to local refinement is planned dynamically based on Expected Improvement convergence.
-
+This progression reflects a shift from global learning to local refinement as the query budget is consumed.
 
 Section 5: Workflow Overview
 
-The BBO capstone project follows a structured optimisation loop designed to efficiently explore and exploit unknown functions under a strict query budget:
+Each optimisation iteration follows a consistent loop:
 
-Data Preparation – Load and normalise initial input-output pairs from .npy files.
+Data Preparation – Load and normalise existing input–output pairs
 
-Model Fitting – Train a surrogate model (Gaussian Process or Neural Network) to approximate the black-box function.
+Model Fitting – Train the current surrogate model(s)
 
-Acquisition Step – Use an acquisition function (Expected Improvement, Probability of Improvement, or Upper Confidence Bound) to suggest the next query point.
+Acquisition Step – Score candidate points using an acquisition function
 
-Evaluation and Logging – Query the true function, update results, and retrain the surrogate model.
+Evaluation and Logging – Query the black-box function and record results
 
-Visualisation and Analysis – Track convergence, feature importance, and model uncertainty to guide the next round.
+Analysis and Monitoring – Inspect convergence, uncertainty, and feature sensitivity
 
+This structure ensures reproducibility while allowing strategy adjustments between rounds.
 
 Section 6: Surrogate Modelling Approaches
 
-Refer the model card at /Model_Card.txt
+(Refer to /Model_Card.txt for detailed model documentation.)
 
-The repository implements multiple surrogate modelling strategies to represent the unknown functions:
+The repository includes multiple surrogate models:
 
 Gaussian Process (GP):
-Uses the Matern kernel for smooth, non-linear surface modelling with uncertainty quantification. Ideal for low-data regimes (under 40 samples).
+Uses a Matérn kernel to model smooth, nonlinear surfaces with calibrated uncertainty. Well suited to low-data regimes and central to early-stage decision-making.
 
 Neural Network Surrogate:
-Implemented in PyTorch, the NN model learns complex, high-dimensional patterns. Gradient-based sensitivity analysis helps identify influential features and guide the next query direction.
+Implemented in PyTorch to capture complex or non-stationary patterns. Gradient-based sensitivity analysis is used to assess feature influence and guide sampling during later rounds.
 
+The combination allows uncertainty-aware exploration early on and expressive modelling during exploitation.
 
 Section 7: Hyperparameter Tuning
 
-The following parameters significantly affect model performance and convergence:
+Several hyperparameters critically influence model stability, convergence speed, and the exploration–exploitation balance. These parameters were not fixed upfront; instead, they were adjusted gradually as the optimisation progressed and the query budget diminished.
 
-Category--Example Parameter--Description--Type
+Gaussian Process (GP) hyperparameters
+Examples include:
 
-GP Kernel--length_scale, nu, noise_level--Controls smoothness and noise tolerance--Continuous
+Kernel length scales (per dimension), used to control smoothness and detect irrelevant inputs
 
-Acquisition--xi (EI/PI)--Adjusts exploration–exploitation balance--Continuous
+Kernel variance, governing the overall output scale
 
-Neural Net--hidden_layers, neurons, learning_rate, batch_size--Defines network capacity and training dynamics--Discrete/Continuous
+Observation noise level, allowing robustness to noisy evaluations
+These parameters are re-optimised via marginal likelihood after each iteration to ensure the GP adapts as new data arrive.
 
-Hyperparameters are tuned empirically through short validation runs or via Bayesian optimisation when computationally feasible.
+Acquisition function hyperparameters
+Examples include:
+
+Expected Improvement (EI) / Probability of Improvement (PI): exploration parameter xi, reduced over rounds to shift from exploration to exploitation
+
+Upper Confidence Bound (UCB): confidence parameter k, tuned downward to limit over-exploration as convergence approaches
+These parameters directly control how aggressively the optimiser explores uncertain regions versus refining known high-performing areas.
+
+Neural Network surrogate hyperparameters
+Examples include:
+
+Number of hidden layers and neurons per layer
+
+Learning rate and optimiser choice
+
+Batch size (reduced in later rounds to stabilise exploitation)
+Neural network capacity was intentionally kept minimal to avoid overfitting in the low-data regime.
+
+Two-stage optimisation and exploitation parameters
+Examples include:
+
+Stage 1 candidate pool size (broad GP-based screening)
+
+Stage 2 refinement size (focused NN-based ranking)
+
+Local sampling radius around the current best solution
+
+Retention of the current best point to prevent regression
+These parameters increasingly favoured local refinement in later rounds while maintaining a small degree of diversity.
+
+Overall, hyperparameter tuning prioritised robustness, interpretability, and controlled convergence over aggressive optimisation. Adjustments were guided by observed surrogate behaviour, acquisition stability, and diminishing marginal gains rather than fixed heuristics.
+
+Section 8: How to Read This Repository
+
+README.md – High-level overview and project narrative
+
+Methodology.md – Rationale and evolution of design decisions
+
+Model_Card.txt – Detailed description of the final hybrid optimiser
+
+Datasheet.txt – Documentation of inputs, outputs, and constraints
+
+Together, these documents aim to present not just what was built, but how and why it evolved — reflecting realistic optimisation under uncertainty rather than a static, idealised solution.
