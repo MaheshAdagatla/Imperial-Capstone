@@ -2,64 +2,47 @@ Model Card: Hybrid Two-Stage Surrogate-Based Black-Box Optimisation
 1. Overview
 
 Model name: Hybrid GP–NN Two-Stage BBO Optimiser
-Type: Sequential surrogate-based black-box optimisation approach
-Version: v0.06 (10-round iterative refinement)
+Type: Sequential surrogate-based black-box optimisation
+Version: v0.07 (11-round iterative refinement)
 
-This approach combines a Gaussian Process (GP) surrogate and a Neural Network (NN) surrogate in a two-stage candidate selection pipeline. The GP provides uncertainty-aware screening of candidates, while the NN refines selections based on learned nonlinear structure. The strategy was iteratively refined over ten optimisation rounds under strict query budgets.
+This approach combines a Gaussian Process (GP) surrogate and a Neural Network (NN) surrogate in a two-stage candidate selection pipeline. The GP is used for uncertainty-aware screening, while the NN refines promising candidates based on learned nonlinear structure. The approach was not fixed upfront; it evolved week by week in response to observed optimisation behaviour under strict query limits.
 
 2. Intended Use
 
-Suitable for:
+This approach is suitable for:
 
 Black-box optimisation with very limited evaluation budgets
 
-Continuous bounded search spaces
+Continuous, bounded search spaces
 
-Problems where function evaluations are expensive or slow
+Expensive or slow-to-evaluate objective functions
 
 Educational and research settings exploring exploration–exploitation trade-offs
 
-Not suitable for:
+It is not suitable for:
 
 Discrete or categorical optimisation problems
 
-Large-scale datasets where full supervised learning is feasible
+Large-scale supervised learning settings
 
-Highly non-stationary or discontinuous objective functions
+Highly discontinuous or adversarial objective functions
 
-Scenarios requiring guaranteed global optimality
+Scenarios requiring guarantees of global optimality
 
 3. Approach Details and Evolution Across Rounds
 
-Across ten rounds, the optimisation strategy evolved deliberately:
+The optimisation strategy evolved deliberately over the rounds.
 
-Early rounds (exploration-focused):
+Early rounds (exploration-first):
+I prioritised broad coverage of the search space using uniform sampling across all dimensions. A GP with a Matérn kernel served as the primary surrogate, and acquisition behaviour favoured exploration to reduce uncertainty and avoid early commitment to misleading regions.
 
-Broad uniform sampling over [0,1] for each of d dimensions
-
-GP surrogate with Matérn kernel to capture smoothness assumptions
-
-Uncertainty-aware acquisition (UCB-style) to explore under-sampled regions
-
-Middle rounds (balanced):
-
-Introduction of a Neural Network surrogate to capture nonlinear trends
-
-Two-stage selection: GP shortlist → NN re-ranking
-
-Increased reliance on surrogate agreement rather than pure uncertainty
+Middle rounds (balanced refinement):
+As patterns emerged, I introduced a Neural Network surrogate to complement the GP. A two-stage pipeline was adopted: the GP shortlisted candidates using uncertainty-aware scoring, and the NN re-ranked them based on learned nonlinear trends. At this stage, decisions relied more on surrogate agreement than raw uncertainty alone.
 
 Later rounds (controlled exploitation):
+Once around 60–70% of the query budget was consumed, I shifted toward controlled exploitation. Candidate generation became increasingly localised around the current best solutions, using weighted sampling and shrinking radii while still preserving some diversity. Dimension importance estimates from GP lengthscales and NN sensitivities guided how aggressively each dimension was narrowed.
 
-Shift toward exploitation as budgets decreased
-
-Dimension importance estimation from GP lengthscales and NN sensitivities
-
-Weighted candidate sampling that narrows weak dimensions while preserving full input format
-
-Localised sampling around current best points, while retaining some diversity
-
-Throughout, the code and strategy were refined weekly based on observed behaviour rather than fixed upfront design.
+By round 11, the strategy is intentionally conservative: refining known good regions rather than chasing uncertain global improvements.
 
 4. Performance
 
@@ -69,62 +52,62 @@ Eight independent black-box functions
 
 Strictly limited number of queries per function
 
-No access to ground-truth optima
+No access to true optima or gradients
 
 Metrics used:
 
 Best observed function value per round
 
-Improvement over initial baseline values
+Improvement relative to early baselines
 
 Stability of surrogate predictions during exploitation
 
-Qualitative convergence behaviour rather than regret bounds
+Qualitative convergence patterns rather than formal regret bounds
 
 Summary:
 
-Consistent improvement across most functions over rounds
+Most functions showed steady improvement in early and mid rounds
 
-Clear diminishing returns after ~60–70% of the budget, motivating exploitation
+Diminishing returns became apparent after mid-budget usage
 
-In some cases, exploitation predictions were slightly below the current best, reflecting uncertainty and surrogate bias rather than failure
+In some cases, predicted improvements during exploitation were slightly below the current best, reflecting uncertainty and surrogate bias rather than incorrect logic
 
 5. Assumptions and Limitations
 
 Key assumptions:
 
-Objective functions are reasonably smooth and continuous
+The objective functions are reasonably smooth and continuous
 
-Local optima provide useful information for global optimisation
+Local optima provide useful signals for further refinement
 
-Surrogate uncertainty is informative despite very small datasets
+Surrogate uncertainty remains informative despite very small datasets
 
 Limitations:
 
-High sensitivity to early samples due to low data regime
+High sensitivity to early samples in the low-data regime
 
-Potential sampling bias toward regions favoured by surrogate assumptions
+Risk of sampling bias toward regions favoured by surrogate assumptions
 
-No formal guarantees of convergence or optimality
+No guarantees of convergence or optimality
 
 Performance depends strongly on correct scaling and normalisation
 
-Failure modes include premature convergence, overconfidence in surrogate predictions, and missed optima in poorly explored regions.
+Potential failure modes include premature convergence, overconfidence in local regions, and missed optima in sparsely explored areas.
 
 6. Ethical and Transparency Considerations
 
-Transparency was prioritised by documenting:
+I prioritised transparency by documenting:
 
-Query decisions
+Query choices and their rationale
 
 Model assumptions
 
-Hyperparameter choices
+Hyperparameter changes
 
-Weekly strategy changes
+Weekly strategy adjustments
 
-This supports reproducibility and enables other researchers to follow, critique, or adapt the approach. While the task is synthetic, the discipline of transparent optimisation design mirrors real-world ML settings where opaque decision-making can lead to unreliable or biased outcomes.
+This supports reproducibility and allows others to follow, critique, or adapt the approach. Although the task is synthetic, the discipline of transparent optimisation mirrors real-world ML practice, where opaque decision-making can lead to unreliable or biased outcomes.
 
 7. Reflections on Clarity and Usefulness
 
-This model card captures how decisions were actually made, rather than presenting a polished “final model.” The structure is sufficient because it aligns strategy, assumptions, and outcomes clearly. Adding more technical detail (e.g. full kernel equations or NN architectures) would not materially improve understanding without more data. The emphasis on reasoning, evolution, and constraints better reflects how optimisation works in practice under uncertainty.
+This model card is designed to reflect how decisions were actually made, rather than presenting a polished, static algorithm. The focus on evolution, constraints, and reasoning makes the approach easier to understand and reproduce. Adding further low-level technical detail would not materially improve clarity given the small-data setting and exploratory nature of the project.
