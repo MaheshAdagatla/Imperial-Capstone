@@ -12,7 +12,7 @@ Early decisions strongly influence later outcomes because each query permanently
 
 Because the number of available evaluations is extremely small relative to the dimensionality of some functions, the methodology prioritises data efficiency, uncertainty awareness, and robustness over aggressive optimisation.
 
-Initial Strategy: Early Rounds and Broad Exploration
+##Initial Strategy: Early Rounds and Broad Exploration
 
 In the early rounds, the primary objective was to gain a coarse but reliable understanding of each function’s global behaviour. At this stage, uncertainty was high and the cost of premature exploitation was severe.
 
@@ -22,7 +22,7 @@ During this phase, the surrogate model was treated primarily as an exploratory t
 
 The emphasis was on coverage rather than precision. Accepting short-term suboptimal evaluations was viewed as a necessary cost to reduce structural uncertainty and avoid early lock-in to misleading local optima.
 
-Intermediate Strategy: Structured Exploration and Model Enrichment
+##Intermediate Strategy: Structured Exploration and Model Enrichment
 
 As the dataset grew, repeated evaluations began to reveal stable patterns. Certain regions consistently outperformed others, while some input dimensions appeared to have limited influence on the output. At the same time, purely global exploration produced diminishing informational returns.
 
@@ -34,7 +34,7 @@ The neural network was not used as a standalone optimiser. Instead, it was emplo
 
 Feature relevance became an explicit part of the methodology during this phase. GP kernel length scales were interpreted as indicators of dimension importance, while neural network input gradients provided local sensitivity estimates. Rather than removing dimensions outright, less influential features were implicitly down-weighted during candidate generation. This preserved the full input space while improving sampling efficiency and reducing noise from weak dimensions.
 
-Transition to Exploitation: Budget Awareness and Focused Search
+##Transition to Exploitation: Budget Awareness and Focused Search
 
 Once a majority of the query budget had been consumed, the optimisation objective shifted again. At this point, continued broad exploration was unlikely to outperform focused refinement of already promising regions.
 
@@ -44,7 +44,7 @@ A two-stage candidate selection process was adopted more systematically. In the 
 
 The interaction between the two models acted as a form of internal validation. Candidates favoured by both surrogates were treated as lower-risk exploitation steps, while disagreements prompted either conservative exploration or rejection, depending on remaining budget.
 
-Final Strategy: Controlled Exploitation and Local Refinement
+##Final Strategy: Controlled Exploitation and Local Refinement
 
 In the final rounds, candidate generation was restricted to a local neighbourhood around the current best-known solution. The sampling radius was progressively reduced to concentrate evaluations where marginal gains were most likely.
 
@@ -54,7 +54,7 @@ Acquisition behaviour was deliberately made more exploitative by lowering uncert
 
 At this stage, the neural network played a decisive role in fine-grained ranking rather than exploration. Its role resembled that of a local optimiser operating within a region already validated by the GP. This mirrors practical optimisation workflows where global models hand off to local refiners near convergence.
 
-Hyperparameter Adaptation Across the Project
+##Hyperparameter Adaptation Across the Project
 
 Throughout the thirteen weeks, hyperparameters were treated as adaptive controls rather than fixed design choices. Candidate pool sizes were gradually reduced, exploration weights were steadily lowered, and local sampling radii were introduced and tightened over time.
 
@@ -62,7 +62,7 @@ Neural network training parameters were also adjusted, with batch sizes reduced 
 
 This adaptive tuning reflects a key methodological principle of the project: optimisation under severe constraints benefits more from responsive adjustment than from rigid optimisation pipelines.
 
-Reflections, Assumptions, and Limitations
+##Reflections, Assumptions, and Limitations
 
 The methodology assumes that local smoothness exists near good solutions and that feature relevance inferred from limited data is meaningful. While the adaptive strategy reduces wasted queries and improves stability, it may still miss isolated global optima or underperform on highly deceptive landscapes.
 
