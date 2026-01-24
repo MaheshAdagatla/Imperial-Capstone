@@ -1,7 +1,7 @@
 # Imperial-Capstone
 Repository for the Black-Box Optimisation Capstone Project
 
-Project Overview
+##Project Overview
 
 This repository contains the work developed over thirteen weeks for the Black-Box Optimisation (BBO) Capstone Project. The project investigates how to efficiently optimise unknown and potentially complex objective functions when no analytical form, gradients, or internal structure are available. Each objective behaves as a true black box: the optimiser can only query the function at selected input values and observe a scalar output in response.
 
