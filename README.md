@@ -11,7 +11,7 @@ Rather than treating optimisation as a one-shot algorithmic choice, the project 
 
 From a professional perspective, the project builds practical capability in uncertainty-aware modelling, experimental design, surrogate-based reasoning, and adaptive decision-making under tight constraints.
 
-Problem Setting and Objectives
+##Problem Setting and Objectives
 
 The task consists of eight independent black-box optimisation problems. Each function accepts a continuous-valued input vector and returns a single real-valued score. The dimensionality of the input varies by function, ranging from two to eight dimensions.
 
@@ -21,7 +21,7 @@ Additional constraints apply to all inputs. Each input vector must begin with a 
 
 The core objective across all weeks is to maximise the final achieved score for each function while demonstrating principled reasoning, stability, and adaptability in the optimisation process.
 
-Repository Structure
+##Repository Structure
 
 The repository is organised to clearly separate data, experimentation, and documentation.
 
@@ -31,7 +31,7 @@ The Notebooks folder contains all Jupyter notebooks used throughout the project.
 
 The remaining files provide structured documentation of the project. The README presents the high-level narrative and evolution. The Methodology document explains the reasoning behind design choices and how they changed over time. The Model Card documents the final hybrid optimisation approach and its assumptions. The Datasheet records the structure, constraints, and evolution of the input–output data.
 
-Inputs and Outputs
+##Inputs and Outputs
 
 Each black-box function accepts a continuous numeric input vector of the form [x1, x2, …, xn], where n depends on the function. For example, Function 1 operates in two dimensions, while Function 8 operates in eight dimensions. In all cases, the first input value is fixed to zero, and remaining values must respect the specified numerical precision constraints.
 
@@ -39,7 +39,7 @@ Each query produces a single scalar output. Higher values indicate better perfor
 
 A complete record of all inputs and outputs, including initial data and weekly additions, is maintained in the Data folder and documented in detail in the Datasheet file.
 
-Optimisation Journey from Week 1 to Week 13
+##Optimisation Journey from Week 1 to Week 13
 
 The optimisation strategy evolved continuously over the thirteen weeks, moving from broad exploration to focused exploitation as more information became available and the remaining budget shrank.
 
@@ -51,25 +51,25 @@ In the later weeks, the remaining query budget became the dominant constraint. A
 
 By week thirteen, the optimisation process had converged into a tightly focused local search guided by accumulated evidence, surrogate agreement, and stability considerations rather than aggressive exploration.
 
-Workflow and Execution
+##Workflow and Execution
 
 Each optimisation iteration follows a consistent workflow. Existing input–output data are loaded and normalised from the Data folder. Surrogate models are trained or updated using all available observations. Candidate points are generated and scored using the current acquisition strategy. A single candidate is selected and evaluated against the black-box function. The resulting input and output are logged and added to the dataset. Diagnostics are then reviewed to assess convergence, uncertainty behaviour, and feature sensitivity before proceeding to the next iteration.
 
 This structure ensures reproducibility while allowing strategic adjustments between weeks as new evidence emerges.
 
-Surrogate Models and Strategy
+##Surrogate Models and Strategy
 
 The optimisation framework relies on a combination of surrogate models rather than a single fixed approach. Gaussian Processes play a central role throughout the project due to their ability to operate effectively in low-data regimes and provide uncertainty estimates that directly support exploration decisions. Matérn kernels are used to balance smoothness and flexibility, and hyperparameters are re-optimised as new data arrive.
 
 Neural network surrogates are introduced later in the project to complement the GP. These models are intentionally kept small to avoid overfitting and are used primarily for ranking and sensitivity analysis rather than uncertainty estimation. Together, the two models enable a hybrid strategy that combines principled uncertainty handling with expressive nonlinear modelling.
 
-Hyperparameter Adaptation
+##Hyperparameter Adaptation
 
 Hyperparameters were not fixed at the outset of the project. Instead, they were adapted gradually as the optimisation progressed. Gaussian Process kernel parameters, noise levels, and length-scales were re-estimated regularly to reflect the growing dataset. Acquisition parameters controlling exploration pressure were reduced over time to shift the balance toward exploitation. Neural network capacity and training settings were adjusted to prioritise stability in the low-data regime.
 
 Two-stage optimisation parameters, such as candidate pool sizes and local sampling radii, were also refined to reflect increasing confidence in the location of high-performing regions. These adjustments were driven by observed behaviour, surrogate diagnostics, and diminishing marginal gains rather than rigid heuristics.
 
-How to Use This Repository
+##How to Use This Repository
 
 Readers interested in the full optimisation narrative should begin with this README, then refer to the Methodology document for detailed reasoning behind design decisions. The Model Card provides a structured description of the final hybrid optimiser and its limitations. The Datasheet documents the structure and evolution of the data used throughout the project.
 
