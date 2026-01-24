@@ -1,113 +1,94 @@
-Model Card: Hybrid Two-Stage Surrogate-Based Black-Box Optimisation
-1. Overview
+Model Card: Sequential Surrogate-Based Black-Box Optimisation Framework
 
-Model name: Hybrid GP–NN Two-Stage BBO Optimiser
-Type: Sequential surrogate-based black-box optimisation
-Version: v0.07 (11-round iterative refinement)
+##Overview
 
-This approach combines a Gaussian Process (GP) surrogate and a Neural Network (NN) surrogate in a two-stage candidate selection pipeline. The GP is used for uncertainty-aware screening, while the NN refines promising candidates based on learned nonlinear structure. The approach was not fixed upfront; it evolved week by week in response to observed optimisation behaviour under strict query limits.
+Model name: Sequential GP and Hybrid GP–NN Black-Box Optimiser
+Model type: Sequential surrogate-based black-box optimisation
+Project duration: 13 rounds of iterative refinement
+Evaluation setting: Strictly budget-limited, sequential queries
 
-2. Intended Use
+This model card documents the full optimisation framework used in the Black-Box Optimisation (BBO) Capstone Project. The approach did not consist of a single static model. Instead, it evolved through two distinct but connected phases: an initial Gaussian Process (GP)–only surrogate model, followed by a hybrid two-stage GP and Neural Network (NN) surrogate framework.
 
-This approach is suitable for:
+The evolution reflects increasing data availability, reduced uncertainty, and the need to transition from exploration to controlled exploitation under a fixed and shrinking query budget.
 
-Black-box optimisation with very limited evaluation budgets
+##Intended Use
 
-Continuous, bounded search spaces
+The optimisation framework is intended for problems with unknown objective functions that are expensive or slow to evaluate, where only a small number of sequential queries are permitted. Typical use cases include hyperparameter tuning, scientific experimentation, simulation-based optimisation, and educational settings exploring exploration–exploitation trade-offs.
 
-Expensive or slow-to-evaluate objective functions
+The approach is well suited to continuous, bounded input spaces with dimensionality ranging from low to moderately high, where uncertainty-aware decision-making is critical.
 
-Educational and research settings exploring exploration–exploitation trade-offs
+It is not designed for discrete or categorical optimisation problems, large-scale supervised learning tasks, or scenarios requiring formal guarantees of global optimality.
 
-It is not suitable for:
+##Phase 1: Gaussian Process–Only Surrogate Model
 
-Discrete or categorical optimisation problems
+#Description
 
-Large-scale supervised learning settings
+In the early rounds of the project, optimisation relied exclusively on a Gaussian Process surrogate model. The GP was selected due to its strong performance in low-data regimes and its ability to produce calibrated uncertainty estimates alongside predictions.
 
-Highly discontinuous or adversarial objective functions
+A Matérn kernel was used to allow flexibility in modelling both smooth and moderately irregular objective functions. At this stage, the GP served primarily as an exploratory model rather than a precision optimiser.
 
-Scenarios requiring guarantees of global optimality
+Role in the optimisation process
 
-3. Approach Details and Evolution Across Rounds
+The GP-only model guided early query selection by balancing predicted performance with predictive uncertainty. Acquisition behaviour prioritised exploration to improve global understanding of the function and reduce the risk of premature convergence.
 
-The optimisation strategy evolved deliberately over the rounds.
+This phase focused on identifying broad trends, detecting promising regions, and observing which input dimensions appeared influential or weak. Short-term performance gains were deliberately deprioritised in favour of information gathering.
 
-Early rounds (exploration-first):
-I prioritised broad coverage of the search space using uniform sampling across all dimensions. A GP with a Matérn kernel served as the primary surrogate, and acquisition behaviour favoured exploration to reduce uncertainty and avoid early commitment to misleading regions.
+#Strengths and limitations
 
-Middle rounds (balanced refinement):
-As patterns emerged, I introduced a Neural Network surrogate to complement the GP. A two-stage pipeline was adopted: the GP shortlisted candidates using uncertainty-aware scoring, and the NN re-ranked them based on learned nonlinear trends. At this stage, decisions relied more on surrogate agreement than raw uncertainty alone.
+The GP-only approach provided strong uncertainty awareness and robustness with very limited data. However, as more observations accumulated, the GP began to smooth over local nonlinearities and showed diminishing marginal returns in candidate ranking. These limitations motivated the introduction of a complementary surrogate model.
 
-Later rounds (controlled exploitation):
-Once around 60–70% of the query budget was consumed, I shifted toward controlled exploitation. Candidate generation became increasingly localised around the current best solutions, using weighted sampling and shrinking radii while still preserving some diversity. Dimension importance estimates from GP lengthscales and NN sensitivities guided how aggressively each dimension was narrowed.
+##Phase 2: Hybrid GP and Neural Network Two-Stage Model
 
-By round 11, the strategy is intentionally conservative: refining known good regions rather than chasing uncertain global improvements.
+#Description
 
-4. Performance
+From the mid rounds onward, a neural network surrogate was introduced alongside the GP, forming a hybrid two-stage optimisation framework. The GP retained responsibility for uncertainty-aware screening, while the NN was used to refine and rank promising candidates based on learned nonlinear structure.
 
-Evaluation context:
+The NN was implemented with deliberately limited capacity to avoid overfitting in the small-data regime. It was never used for global search or uncertainty estimation.
 
-Eight independent black-box functions
+#Two-stage candidate selection
 
-Strictly limited number of queries per function
+In the hybrid framework, candidate selection proceeds in two steps. First, a broad pool of candidate points is evaluated using the GP acquisition function, with exploration weights gradually reduced over time. Second, a smaller subset of high-potential candidates is re-ranked using the NN’s predicted mean.
 
-No access to true optima or gradients
+This separation allows uncertainty to guide where the optimiser looks, while expressiveness determines how fine-grained decisions are made within promising regions.
 
-Metrics used:
+#Feature relevance and dimensional control
 
-Best observed function value per round
+Both surrogates contribute to feature relevance estimation. GP kernel length scales are interpreted as indicators of global relevance, while NN input sensitivities provide local importance estimates.
 
-Improvement relative to early baselines
+Rather than removing dimensions, weaker features are down-weighted during candidate generation and sampling radius control. This preserves the full input structure while improving efficiency and stability.
 
-Stability of surrogate predictions during exploitation
+#Final rounds behaviour
 
-Qualitative convergence patterns rather than formal regret bounds
+In later rounds, the hybrid model operates in a controlled exploitation regime. Candidate sampling is localised around the current best solution, with shrinking radii and reduced exploration coefficients. The GP ensures conservative decision-making, while the NN performs fine-grained ranking within a trusted region.
 
-Summary:
+##Performance Evaluation
 
-Most functions showed steady improvement in early and mid rounds
+#Evaluation context
 
-Diminishing returns became apparent after mid-budget usage
+The optimiser was evaluated across eight independent black-box functions with dimensionality ranging from two to eight. Each function had a strictly limited number of allowed queries, and no access to gradients or true optima was available.
 
-In some cases, predicted improvements during exploitation were slightly below the current best, reflecting uncertainty and surrogate bias rather than incorrect logic
+#Performance indicators
 
-5. Assumptions and Limitations
+Performance was assessed using best observed function values over time, improvement relative to early baselines, stability of surrogate predictions in later rounds, and qualitative convergence behaviour rather than formal regret bounds.
 
-Key assumptions:
+#Observed outcomes
 
-The objective functions are reasonably smooth and continuous
+Across most functions, the GP-only phase produced reliable early improvements and structural insight. The hybrid phase improved refinement efficiency and stabilised late-stage decisions. Diminishing returns were observed as the query budget was exhausted, which is consistent with expectations in severe low-budget optimisation settings.
 
-Local optima provide useful signals for further refinement
+##Assumptions and Limitations
 
-Surrogate uncertainty remains informative despite very small datasets
+The framework assumes that objective functions exhibit some degree of continuity and local smoothness, and that early observations provide meaningful signals for later refinement. It also assumes that feature relevance inferred from limited data is sufficiently informative to guide sampling decisions.
 
-Limitations:
+Limitations include sensitivity to early samples, potential bias introduced by surrogate assumptions, and the absence of guarantees regarding convergence or global optimality. The approach may underperform on highly deceptive landscapes or functions with isolated optima far from early samples.
 
-High sensitivity to early samples in the low-data regime
+##Ethical and Transparency Considerations
 
-Risk of sampling bias toward regions favoured by surrogate assumptions
+All optimisation decisions, hyperparameter adjustments, and strategy transitions were documented throughout the project. This transparency supports reproducibility, critical review, and adaptation by others.
 
-No guarantees of convergence or optimality
+Although the task itself is synthetic, the emphasis on traceability, uncertainty awareness, and explicit reasoning mirrors best practices in real-world ML and optimisation work, where opaque decision-making can lead to unreliable outcomes.
 
-Performance depends strongly on correct scaling and normalisation
+##Reflections on Usefulness
 
-Potential failure modes include premature convergence, overconfidence in local regions, and missed optima in sparsely explored areas.
+This model card intentionally reflects the evolution of the optimisation strategy rather than presenting a polished, static algorithm. The distinction between the initial GP-only phase and the later hybrid GP–NN phase is central to understanding how and why decisions changed as data accumulated and constraints tightened.
 
-6. Ethical and Transparency Considerations
-
-I prioritised transparency by documenting:
-
-Query choices and their rationale
-
-Model assumptions
-
-Hyperparameter changes
-
-Weekly strategy adjustments
-
-This supports reproducibility and allows others to follow, critique, or adapt the approach. Although the task is synthetic, the discipline of transparent optimisation mirrors real-world ML practice, where opaque decision-making can lead to unreliable or biased outcomes.
-
-7. Reflections on Clarity and Usefulness
-
-This model card is designed to reflect how decisions were actually made, rather than presenting a polished, static algorithm. The focus on evolution, constraints, and reasoning makes the approach easier to understand and reproduce. Adding further low-level technical detail would not materially improve clarity given the small-data setting and exploratory nature of the project.
+The framework prioritises adaptability, reasoning, and robustness over raw optimisation performance, aligning with the realities of constrained optimisation in professional and research settings.
